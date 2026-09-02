@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chronos Feasibility Presentation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* 1. CORE DESIGN PRINCIPLES */
+        :root {
+            --kmutt-blue: #003D7B;
+            --kmutt-orange: #F58220;
+            --tech-purple: #7C3AED;
+            --tech-blue: #2563eb;
+            --white: #ffffff;
+            --bg-gray: #f1f5f9;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+        }
+
+        * { box-sizing: border-box; }
+        body { background-color: #e2e8f0; margin: 0; padding: 20px 0; display: grid; gap: 20px; place-items: center; min-height: 100vh; }
+
+        /* 2. SLIDE CONTAINER */
+        .slide-container {
+            width: 1280px;
+            height: 720px;
+            background-color: var(--white);
+            color: var(--text-dark);
+            font-family: 'Inter', sans-serif;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Background Graphics - Tech Aesthetic */
+        .slide-container::before {
+            content: '';
+            position: absolute;
+            width: 800px; height: 800px;
+            background: radial-gradient(circle, rgba(124, 58, 237, 0.03) 0%, transparent 70%);
+            top: -300px; right: -300px;
+        }
+
+        .slide-container::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; width: 100%; height: 6px;
+            background: linear-gradient(90deg, var(--kmutt-blue), var(--tech-purple), var(--kmutt-orange));
+        }
+
+        .slide-container > * { position: relative; z-index: 1; }
+
+        /* 3. TYPOGRAPHY */
+        h1, h2 { font-family: 'Montserrat', sans-serif; margin: 0; }
+        h1 { font-size: 80px; color: var(--kmutt-blue); letter-spacing: -2px; }
+        .slide-title { font-size: 40px; color: var(--kmutt-blue); margin: 60px 0 30px 60px; border-left: 8px solid var(--kmutt-orange); padding-left: 20px; text-transform: uppercase; }
+        
+        h3 { font-size: 24px; color: var(--tech-blue); margin-bottom: 12px; font-weight: 600; }
+        p, li { font-size: 18px; line-height: 1.5; color: var(--text-dark); }
+        .subtitle { font-size: 26px; color: var(--tech-purple); font-weight: 500; margin-bottom: 30px; }
+
+        /* 4. LAYOUT COMPONENTS */
+        .content-area { flex-grow: 1; padding: 0 60px 40px 60px; display: flex; flex-direction: column; justify-content: center; }
+        .slide-footer { position: absolute; bottom: 30px; right: 60px; font-size: 14px; color: var(--text-muted); font-weight: 600; }
+
+        /* Title Layout */
+        .logo-header { position: absolute; top: 50px; right: 60px; width: 220px; }
+        .logo-header img { width: 100%; object-fit: contain; }
+
+        /* Grid / Tiled Layouts */
+        .tiled-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; height: 100%; }
+        .tile { background: var(--bg-gray); border-radius: 12px; padding: 25px; border-top: 4px solid var(--tech-purple); }
+        .tile i { font-size: 30px; color: var(--kmutt-orange); margin-bottom: 15px; }
+        .tile ul { list-style: none; padding: 0; margin: 0; }
+        .tile li { font-size: 15px; margin-bottom: 8px; position: relative; padding-left: 20px; }
+        .tile li::before { content: '•'; position: absolute; left: 0; color: var(--tech-blue); font-weight: bold; }
+
+        /* Tables & Charts */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background: var(--kmutt-blue); color: var(--white); text-align: left; padding: 15px; font-size: 18px; }
+        td { padding: 12px 15px; border-bottom: 1px solid #e2e8f0; font-size: 16px; }
+        tr:nth-child(even) { background: #f8fafc; }
+
+        .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+        .bullet-list { list-style: none; padding: 0; }
+        .bullet-list li { margin-bottom: 18px; position: relative; padding-left: 35px; }
+        .bullet-list li i { position: absolute; left: 0; top: 4px; color: var(--kmutt-orange); font-size: 20px; }
+
+        .image-wrapper { border-radius: 16px; overflow: hidden; height: 100%; border: 1px solid #e2e8f0; background: #fff; }
+        .image-wrapper img { width: 100%; height: 100%; object-fit: contain; }
+
+        /* Gantt Chart */
+        .gantt-container { margin-top: 10px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; padding: 20px; }
+        .gantt-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .gantt-table th { background: var(--bg-gray); color: var(--text-dark); font-size: 12px; text-align: center; border: 1px solid #e2e8f0; padding: 8px; }
+        .gantt-table td { height: 40px; border: 1px solid #f1f5f9; position: relative; padding: 0; }
+        .phase-label { width: 220px; text-align: left !important; font-size: 13px !important; padding-left: 15px !important; }
+        .bar { position: absolute; top: 10px; bottom: 10px; border-radius: 15px; opacity: 0.9; display: flex; align-items: center; padding-left: 12px; color: white; font-size: 11px; font-weight: bold; white-space: nowrap; }
+    </style>
+</head>
+<body>
+
+<!-- SLIDE 1: TITLE SLIDE -->
+<div class="slide-container" id="slide1">
+    <div class="logo-header">
+        <img src="http://googleusercontent.com/image_collection/image_retrieval/2723878244035006716" alt="SIT KMUTT Logo">
+    </div>
+    <div class="content-area" style="padding-left: 60px;">
+        <h1>Chronos</h1>
+        <p class="subtitle">Universal Automated Scheduling Platform</p>
+        <div style="margin-top: 50px; border-left: 4px solid var(--kmutt-orange); padding-left: 30px;">
+            <p><strong>Student:</strong> Aung Moe Lin (ID: 66130500803)</p>
+            <p><strong>Advisor:</strong> Asst. Prof. Dr. Worarat Krathu</p>
+            <p style="margin-top: 15px; color: var(--text-muted);">School of Information Technology (SIT)<br>King Mongkut's University of Technology Thonburi</p>
+            <p style="color: var(--text-muted);">February 2026</p>
+        </div>
+    </div>
+    <div class="slide-footer">01</div>
+</div>
+
+<!-- SLIDE 2: BACKGROUND -->
+<div class="slide-container" id="slide2">
+    <h2 class="slide-title">Background: The Universal Challenge</h2>
+    <div class="content-area">
+        <div class="tiled-grid">
+            <div class="tile" style="border-top-color: var(--kmutt-blue);">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <h3>Universities</h3>
+                <p style="font-size: 14px;">Coordinating 100+ courses, 40 instructors, and capacity-constrained rooms with overlapping availability.</p>
+            </div>
+            <div class="tile" style="border-top-color: var(--kmutt-orange);">
+                <i class="fa-solid fa-book-open"></i>
+                <h3>Tuition Centers</h3>
+                <p style="font-size: 14px;">Managing 50-100 weekly classes with part-time staff and specific teacher/student preferences.</p>
+            </div>
+            <div class="tile" style="border-top-color: var(--tech-purple);">
+                <i class="fa-solid fa-building-user"></i>
+                <h3>Corporate</h3>
+                <p style="font-size: 14px;">Optimizing 20-50 cross-department meetings and specialized conference room resources.</p>
+            </div>
+        </div>
+        <div style="margin-top: 30px; background: #fff7ed; padding: 20px; border-radius: 12px; border: 1px dashed var(--kmutt-orange);">
+            <p style="font-size: 16px;"><strong>Current Reality:</strong> Manual scheduling takes 5-30 hours per cycle and is highly error-prone with no optimization of workload balance or preferences.</p>
+        </div>
+    </div>
+    <div class="slide-footer">02</div>
+</div>
+
+<!-- SLIDE 3: PROBLEM STATEMENT -->
+<div class="slide-container" id="slide3">
+    <h2 class="slide-title">Problem Statement</h2>
+    <div class="content-area">
+        <div class="two-column">
+            <div>
+                <ul class="bullet-list">
+                    <li><i class="fa-solid fa-clock-rotate-left"></i> <strong>Time-Consuming:</strong> 5-30 hours per cycle in manual spreadsheet management.</li>
+                    <li><i class="fa-solid fa-triangle-exclamation"></i> <strong>High Error Rate:</strong> Frequent double-bookings and capacity violations.</li>
+                    <li><i class="fa-solid fa-shuffle"></i> <strong>Poor Change Control:</strong> Rescheduling causes cascading conflicts across the entire system.</li>
+                    <li><i class="fa-solid fa-chart-line"></i> <strong>No Optimization:</strong> Inability to balance workloads or honor soft constraints mathematically.</li>
+                </ul>
+            </div>
+            <div style="background: var(--kmutt-blue); border-radius: 16px; padding: 40px; color: var(--white); display: flex; flex-direction: column; justify-content: center;">
+                <p style="font-size: 22px; font-style: italic; line-height: 1.4; color: #cbd5e1;">"How can we automate constraint-based scheduling across different domains to eliminate conflicts, save time, and optimize resource utilization?"</p>
+                <p style="margin-top: 30px; color: var(--kmutt-orange); font-weight: 700; text-transform: uppercase; font-size: 14px;">The Solution Gap</p>
+                <p style="font-size: 15px;">No existing tool provides a mathematical guarantee of conflict-free scheduling with domain flexibility.</p>
+            </div>
+        </div>
+    </div>
+    <div class="slide-footer">03</div>
+</div>
+
+<!-- SLIDE 4: OBJECTIVES -->
+<div class="slide-container" id="slide4">
+    <h2 class="slide-title">Project Objectives</h2>
+    <div class="content-area">
+        <div class="tiled-grid" style="grid-template-columns: repeat(2, 1fr);">
+            <div class="tile">
+                <i class="fa-solid fa-cogs"></i>
+                <h3>Development Goals</h3>
+                <ul style="list-style: disc; padding-left: 20px;">
+                    <li style="font-size: 16px;">Design a universal automated system using Constraint Programming.</li>
+                    <li style="font-size: 16px;">Leverage Google OR-Tools for optimal solution generation.</li>
+                    <li style="font-size: 16px;">Create domain-specific templates (Edu, Corporate, Tuition).</li>
+                </ul>
+            </div>
+            <div class="tile" style="border-top-color: var(--kmutt-orange);">
+                <i class="fa-solid fa-check-double"></i>
+                <h3>Success Criteria</h3>
+                <ul style="list-style: disc; padding-left: 20px;">
+                    <li style="font-size: 16px;">Zero scheduling conflicts (Mathematically guaranteed).</li>
+                    <li style="font-size: 16px;">Generation time &lt; 30s for 100+ items.</li>
+                    <li style="font-size: 16px;">90%+ time reduction compared to manual methods.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="slide-footer">04</div>
+</div>
+
+<!-- SLIDE 5: OUR SOLUTION -->
+<div class="slide-container" id="slide5">
+    <h2 class="slide-title">Chronos Solution & Engine</h2>
+    <div class="content-area">
+        <div class="two-column">
+            <div>
+                <h3>Why Google OR-Tools?</h3>
+                <p>We utilize the <strong>CP-SAT Solver</strong> for unmatched reliability and speed.</p>
+                <table style="margin-top: 20px;">
+                    <thead><tr><th>Engine</th><th>Success Rate</th><th>Execution</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>OR-Tools</strong></td><td><strong>100%</strong></td><td><strong>Optimal (6.5s)</strong></td></tr>
+                        <tr><td>Greedy</td><td>35-85%</td><td>Suboptimal</td></tr>
+                        <tr><td>Backtracking</td><td>90%</td><td>Exponential Time</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="tile" style="background: #f8fafc;">
+                <h3>Core Features</h3>
+                <ul class="bullet-list" style="font-size: 14px;">
+                    <li><i class="fa-solid fa-cloud"></i> Web-based SaaS platform</li>
+                    <li><i class="fa-solid fa-shield-halved"></i> Real-time conflict detection</li>
+                    <li><i class="fa-solid fa-wand-magic-sparkles"></i> Preference optimization</li>
+                    <li><i class="fa-solid fa-calendar-days"></i> Visual output & Integrations</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="slide-footer">05</div>
+</div>
+
+<!-- SLIDE 6: SCOPE -->
+<div class="slide-container" id="slide6">
+    <h2 class="slide-title">Phased Development Scope</h2>
+    <div class="content-area">
+        <div class="tiled-grid">
+            <div class="tile" style="background: rgba(0, 61, 123, 0.05);">
+                <h3>Phase 1: Pilot</h3>
+                <p style="font-size: 13px;"><strong>KMUTT SIT MVP:</strong> Hard constraints (No room/instructor overlapping), instructor preferences, visual timetable generation.</p>
+            </div>
+            <div class="tile" style="background: rgba(124, 58, 237, 0.05);">
+                <h3>Phase 2: Expansion</h3>
+                <p style="font-size: 13px;">Multi-tenant SaaS architecture, tuition center templates, Calendar integrations (Google/Outlook).</p>
+            </div>
+            <div class="tile" style="background: rgba(245, 130, 32, 0.05);">
+                <h3>Phase 3: Launch</h3>
+                <p style="font-size: 13px;">Commercial SaaS launch, AI-powered preference learning, and native mobile applications.</p>
+            </div>
+        </div>
+    </div>
+    <div class="slide-footer">06</div>
+</div>
+
+<!-- SLIDE 7: FUNCTIONAL REQUIREMENTS -->
+<div class="slide-container" id="slide7">
+    <h2 class="slide-title">Functional Requirements Overview</h2>
+    <div class="content-area">
+        <div class="tiled-grid" style="grid-template-rows: repeat(2, 1fr);">
+            <div class="tile">
+                <h3 style="font-size: 18px;"><i class="fa-solid fa-user-shield"></i> Access Mgmt</h3>
+                <ul>
+                    <li>Secure Authentication</li>
+                    <li>Role-based Access Control</li>
+                    <li>Session Management</li>
+                </ul>
+            </div>
+            <div class="tile">
+                <h3 style="font-size: 18px;"><i class="fa-solid fa-database"></i> Data Mgmt</h3>
+                <ul>
+                    <li>Manage Core Entities</li>
+                    <li>Data Import/Export</li>
+                    <li>Input Validation</li>
+                </ul>
+            </div>
+            <div class="tile">
+                <h3 style="font-size: 18px;"><i class="fa-solid fa-sliders"></i> Constraints</h3>
+                <ul>
+                    <li>Hard/Soft Rule Definition</li>
+                    <li>Optimization Weights</li>
+                    <li>Template Loading</li>
+                </ul>
+            </div>
+            <div class="tile">
+                <h3 style="font-size: 18px;"><i class="fa-solid fa-bolt"></i> Generation</h3>
+                <ul>
+                    <li>Auto-Schedule Generation</li>
+                    <li>Optimization Logic</li>
+                    <li>Multiple Output Options</li>
+                </ul>
+            </div>
+            <div class="tile">
+                <h3 style="font-size: 18px;"><i class="fa-solid fa-calendar-check"></i> Visualization</h3>
+                <ul>
+                    <li>Grid/Calendar Views</li>
+                    <li>Advanced Filtering</li>
+                    <li>Report Generation</li>
+                </ul>
+            </div>
+            <div class="tile">
+                <h3 style="font-size: 18px;"><i class="fa-solid fa-code-branch"></i> Versioning</h3>
+                <ul>
+                    <li>Manual Adjustments</li>
+                    <li>Conflict Validation</li>
+                    <li>Version Comparisons</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="slide-footer">07</div>
+</div>
+
+<!-- SLIDE 8: NON-FUNCTIONAL REQUIREMENTS -->
+<div class="slide-container" id="slide8">
+    <h2 class="slide-title">Non-Functional Requirements</h2>
+    <div class="content-area">
+        <div class="tiled-grid" style="grid-template-rows: repeat(2, 1fr);">
+            <div class="tile" style="border-top-color: var(--kmutt-orange);">
+                <h3 style="font-size: 18px;"><i class="fa-solid fa-gauge-high"></i> Performance</h3>
+                <ul>
+                    <li>Generation &lt; 30s</li>
+                    <li>Load Time &lt; 2s</li>
+                    <li>Supports 1000+ Items</li>
+                </ul>
+            </div>
+            <div class="tile" style="border-top-color: var(--kmutt-orange);">
+                <h3 style="font-size: 18px;"><i class="fa-solid fa-universal-access"></i> Usability</h3>
+                <ul>
+                    <li>&lt; 2h Training Required</li>
+                    <li>WCAG 2.1 Compliant</li>
+                    <li>Responsive Design</li>
+                </ul>
+            </div>
+            <div class="tile" style="border-top-color: var(--kmutt-orange);">
+                <h3 style="font-size: 18px;"><i class="fa-solid fa-heart-pulse"></i> Reliability</h3>
+                <ul>
+                    <li>99% Uptime Goal</li>
+                    <li>Graceful Failover</li>
+                    <li>Daily Auto-Backups</li>
+                </ul>
+            </div>
+            <div class="tile" style="border-top-color: var(--kmutt-orange);">
+                <h3 style="font-size: 18px;"><i class="fa-solid fa-lock"></i> Security</h3>
+                <ul>
+                    <li>HTTPS/TLS Encryption</li>
+                    <li>OWASP Top 10 Protection</li>
+                    <li>Audit Activity Logging</li>
+                </ul>
+            </div>
+            <div class="tile" style="border-top-color: var(--kmutt-orange);">
+                <h3 style="font-size: 18px;"><i class="fa-solid fa-wrench"></i> Maintainability</h3>
+                <ul>
+                    <li>Modular Architecture</li>
+                    <li>80%+ Unit Test Coverage</li>
+                    <li>Cloud Scalability</li>
+                </ul>
+            </div>
+            <div class="tile" style="border-top-color: var(--kmutt-orange);">
+                <h3 style="font-size: 18px;"><i class="fa-solid fa-laptop-code"></i> Compatibility</h3>
+                <ul>
+                    <li>Modern Browser Support</li>
+                    <li>Cross-Platform OS</li>
+                    <li>PostgreSQL 12+</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="slide-footer">08</div>
+</div>
+
+<!-- SLIDE 9: PROJECT TIMELINE (GANTT CHART) -->
+<div class="slide-container" id="slide9">
+    <h2 class="slide-title">Project Timeline - Feb to May 2026</h2>
+    <div class="content-area">
+        <div class="gantt-container">
+            <table class="gantt-table">
+                <thead>
+                    <tr>
+                        <th class="phase-label">Development Phase</th>
+                        <th colspan="3">February</th>
+                        <th colspan="4">March</th>
+                        <th colspan="4">April</th>
+                        <th colspan="3">May</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Phase 1 -->
+                    <tr>
+                        <td class="phase-label">1. Planning & Design</td>
+                        <td colspan="3"><div class="bar" style="width: 100%; background: var(--kmutt-blue);">Design Doc Complete</div></td>
+                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                    </tr>
+                    <!-- Phase 2 -->
+                    <tr>
+                        <td class="phase-label">2. Backend Development</td>
+                        <td></td><td></td><td></td>
+                        <td colspan="4"><div class="bar" style="width: 100%; background: var(--tech-purple);">API & Solver Engine</div></td>
+                        <td></td><td></td><td></td><td></td><td></td><td></td>
+                    </tr>
+                    <!-- Phase 3 -->
+                    <tr>
+                        <td class="phase-label">3. Frontend Development</td>
+                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                        <td colspan="3"><div class="bar" style="width: 100%; background: var(--tech-blue);">React Dashboards</div></td>
+                        <td></td><td></td><td></td>
+                    </tr>
+                    <!-- Phase 4 -->
+                    <tr>
+                        <td class="phase-label">4. Testing & Refinement</td>
+                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                        <td colspan="2"><div class="bar" style="width: 100%; background: var(--kmutt-orange);">Pilot Testing</div></td>
+                        <td></td><td></td>
+                    </tr>
+                    <!-- Phase 5 -->
+                    <tr>
+                        <td class="phase-label">5. Documentation & Delivery</td>
+                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                        <td colspan="2"><div class="bar" style="width: 100%; background: var(--text-muted);">Final Handover</div></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div style="margin-top: 20px; display: flex; gap: 30px; font-size: 12px; color: var(--text-muted);">
+            <span>📍 Week 3: Design Complete</span>
+            <span>📍 Week 7: Backend Complete</span>
+            <span>📍 Week 10: Frontend Complete</span>
+            <span>📍 Week 14: Final Delivery</span>
+        </div>
+    </div>
+    <div class="slide-footer">09</div>
+</div>
+
+<!-- SLIDE 10: TECHNOLOGY STACK -->
+<div class="slide-container" id="slide10">
+    <h2 class="slide-title">Modern Technology Stack</h2>
+    <div class="content-area">
+        <div class="two-column">
+            <div>
+                <h3>Backend & Solver</h3>
+                <ul class="bullet-list">
+                    <li><i class="fa-brands fa-python"></i> <strong>Python / Flask:</strong> API & Core Logic</li>
+                    <li><i class="fa-solid fa-gear"></i> <strong>OR-Tools:</strong> Optimization Engine</li>
+                    <li><i class="fa-solid fa-database"></i> <strong>PostgreSQL:</strong> Persistent Storage</li>
+                </ul>
+            </div>
+            <div>
+                <h3>Frontend & Design</h3>
+                <ul class="bullet-list">
+                    <li><i class="fa-brands fa-react"></i> <strong>React.js:</strong> Dynamic Dashboard</li>
+                    <li><i class="fa-solid fa-palette"></i> <strong>Tailwind CSS:</strong> Modern Styling</li>
+                    <li><i class="fa-brands fa-figma"></i> <strong>Figma:</strong> UX Design</li>
+                </ul>
+            </div>
+        </div>
+        <div style="margin-top: 30px; text-align: center; color: var(--tech-blue);">
+            <p><strong>Total Development Cost: $0</strong> (Open-Source Focused)</p>
+        </div>
+    </div>
+    <div class="slide-footer">10</div>
+</div>
+
+<!-- SLIDE 11: ARCHITECTURE -->
+<div class="slide-container" id="slide11">
+    <h2 class="slide-title">System Architecture</h2>
+    <div class="content-area">
+        <div class="two-column" style="align-items: center;">
+            <div class="image-wrapper">
+                <img src="http://googleusercontent.com/image_collection/image_retrieval/15160292784044796139" alt="Chronos SaaS Architecture Diagram">
+            </div>
+            <div class="tile" style="border-top-color: var(--kmutt-blue);">
+                <h3>4-Tier Implementation</h3>
+                <ul style="padding-left: 20px;">
+                    <li style="margin-bottom: 10px;"><strong>Presentation:</strong> React Web Application</li>
+                    <li style="margin-bottom: 10px;"><strong>Application:</strong> Flask REST API Layer</li>
+                    <li style="margin-bottom: 10px;"><strong>Optimization:</strong> Google OR-Tools CP-SAT</li>
+                    <li style="margin-bottom: 10px;"><strong>Data:</strong> PostgreSQL Relational DB</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="slide-footer">11</div>
+</div>
+
+<!-- SLIDE 12: FEASIBILITY -->
+<div class="slide-container" id="slide12">
+    <h2 class="slide-title">Feasibility Conclusion</h2>
+    <div class="content-area">
+        <div class="tiled-grid">
+            <div class="tile">
+                <h3 style="color: #10b981;">Technical</h3>
+                <p style="font-size: 13px;">High. Prototype validates OR-Tools efficiency. Stack is industry-standard and highly scalable.</p>
+            </div>
+            <div class="tile">
+                <h3 style="color: #10b981;">Economic</h3>
+                <p style="font-size: 13px;">High. Zero licensing fees. Clear revenue tiers for Institutions and SMBs ($88k-$260k projection).</p>
+            </div>
+            <div class="tile">
+                <h3 style="color: #10b981;">Operational</h3>
+                <p style="font-size: 13px;">High. 95% time reduction proven. Addresses a critical, manual pain point in academic admin.</p>
+            </div>
+        </div>
+        <div style="margin-top: 40px; text-align: center; background: var(--kmutt-blue); padding: 30px; border-radius: 12px; color: white;">
+            <h2 style="color: var(--kmutt-orange); font-size: 32px;">Highly Feasible (9/10)</h2>
+            <p>Chronos is ready for Phase 1 Pilot development at SIT KMUTT.</p>
+        </div>
+    </div>
+    <div class="slide-footer">12</div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,3 @@
+ortools>=9.8.0
+# Timefold (optional): uncomment to enable; requires JDK 17+ and JAVA_HOME
+# timefold @ git+https://github.com/TimefoldAI/timefold-solver-python.git
