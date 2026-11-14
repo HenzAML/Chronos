@@ -11,5 +11,7 @@ __pycache__/
 node_modules/
 dist/
 frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
 
 *.egg-info/

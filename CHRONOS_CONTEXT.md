@@ -192,6 +192,9 @@ PY -m pytest                         # tests (API tests use database chronos_tes
 # in frontend/
 npm install
 npm run dev                          # http://localhost:5173
+npx playwright install chromium      # once, for the browser tests
+npm run test:e2e                     # browser tests; own servers + database chronos_e2e
+                                     # if Windows blocks the download: set E2E_BROWSER=msedge
 ```
 
 The API listens on 5001 because macOS AirPlay Receiver owns 5000. Open the site as
@@ -202,5 +205,5 @@ The API listens on 5001 because macOS AirPlay Receiver owns 5000. Open the site 
 - Verified what-if suggestions: "Find fixes" rerun on a partial schedule
 - AI-written suggestions via OpenRouter, built on the stored reasons
 - Per-course priority (which classes to drop first)
-- No frontend tests; backend has solver tests (no database) and API tests (Postgres)
+- Tests: solver (no database), API (Postgres), browser (Playwright, `frontend/e2e`). No component tests
 - Auth deferred (`User`, `/auth/*`, login page) — last phase
