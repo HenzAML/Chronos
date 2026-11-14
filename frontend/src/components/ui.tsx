@@ -44,14 +44,18 @@ export function Modal(
 }
 
 export function Field(
-  { label, hint, children }: { label: string; hint?: string; children: ReactNode },
+  { label, hint, children, group }:
+  { label: string; hint?: string; children: ReactNode; group?: boolean },
 ) {
+  // `group` holds several controls. A <label> around them would send a click
+  // on the caption or hint to the first control inside.
+  const Tag = group ? 'div' : 'label'
   return (
-    <label className="field">
+    <Tag className="field">
       <span className="field-label">{label}</span>
       {children}
       {hint && <span className="field-hint">{hint}</span>}
-    </label>
+    </Tag>
   )
 }
 

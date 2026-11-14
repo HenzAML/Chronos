@@ -183,7 +183,7 @@ export default function Courses() {
             </Field>
           </div>
 
-          <Field label="Equipment requirements"
+          <Field group label="Equipment requirements"
             hint="Essential is enforced as a hard constraint (H6): a class with no suitable room is left out of the schedule. Preferred only adds soft penalty S3.">
             <table className="table table-tight">
               <thead><tr><th>Item</th><th>Not needed</th><th>Preferred</th><th>Essential</th></tr></thead>

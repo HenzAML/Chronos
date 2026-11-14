@@ -87,7 +87,7 @@ export default function Constraints() {
       <section className="panel">
         <h2>Hard constraints</h2>
         <p className="muted small">
-          H1 (every course scheduled exactly once) is structural and always enforced.
+          H1 (a class is scheduled at most once) is structural and always enforced.
         </p>
         <div className="toggles">
           {HARD.map((h) => (
@@ -136,7 +136,8 @@ export default function Constraints() {
 
 function PreviewResult({ schedule }: { schedule: Schedule }) {
   const pb = schedule.diagnostics?.penalty_breakdown
-  const ok = schedule.status === 'optimal' || schedule.status === 'feasible'
+  const partial = schedule.status === 'partial'
+  const ok = partial || schedule.status === 'optimal' || schedule.status === 'feasible'
   if (!ok) {
     return (
       <div className="alert alert-warn">
@@ -146,8 +147,11 @@ function PreviewResult({ schedule }: { schedule: Schedule }) {
     )
   }
   return (
-    <div className="alert alert-ok">
-      <strong>Preview: Z = {schedule.soft_score}</strong>{' '}
+    <div className={`alert ${partial ? 'alert-warn' : 'alert-ok'}`}>
+      <strong>
+        Preview: Z = {schedule.soft_score}
+        {partial && ` · ${schedule.assignment_count} of ${schedule.class_count} classes placed`}
+      </strong>{' '}
       <span className="muted">
         ({schedule.status}, {schedule.solve_seconds?.toFixed(2)}s, saved as #{schedule.id})
       </span>

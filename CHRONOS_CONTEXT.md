@@ -194,7 +194,7 @@ npm install
 npm run dev                          # http://localhost:5173
 npx playwright install chromium      # once, for the browser tests
 npm run test:e2e                     # browser tests; own servers + database chronos_e2e
-                                     # if Windows blocks the download: set E2E_BROWSER=msedge
+                                     # if Windows blocks the download: set E2E_BROWSER=msedge (or chrome)
 ```
 
 The API listens on 5001 because macOS AirPlay Receiver owns 5000. Open the site as

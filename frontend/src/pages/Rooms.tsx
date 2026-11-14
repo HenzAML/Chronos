@@ -112,7 +112,7 @@ export default function Rooms() {
               onChange={(e) => setEditing({ ...editing, capacity: Number(e.target.value) })} /></Field>
           </div>
 
-          <Field label="Suitable for"
+          <Field group label="Suitable for"
             hint="A room may support several session types. Mismatch costs soft penalty S4.">
             <div className="checks">
               {CAPABILITIES.map((c) => (
@@ -125,7 +125,7 @@ export default function Rooms() {
             </div>
           </Field>
 
-          <Field label="Equipment"
+          <Field group label="Equipment"
             hint="Courses needing kit this room lacks pay S3 — or are barred outright if essential (H6).">
             <div className="checks">
               {data.equipment.map((eq) => (

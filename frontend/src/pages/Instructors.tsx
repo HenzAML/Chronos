@@ -134,7 +134,7 @@ export default function Instructors() {
               onChange={(e) => setEditing({ ...editing, email: e.target.value })} /></Field>
           </div>
 
-          <Field label="Preferences" hint="Soft only — the solver trades these off (S1, S2).">
+          <Field group label="Preferences" hint="Soft only — the solver trades these off (S1, S2).">
             <label className="check">
               <input type="checkbox" checked={Boolean(editing.prefer_morning)}
                 onChange={(e) => setEditing({ ...editing, prefer_morning: e.target.checked })} />
@@ -157,7 +157,7 @@ export default function Instructors() {
             </div>
           </Field>
 
-          <Field label={`Availability — ${editing.availability_slot_ids.length} slot(s) selected`}
+          <Field group label={`Availability — ${editing.availability_slot_ids.length} slot(s) selected`}
             hint="Hard constraint H5: the instructor can only be scheduled in ticked slots.">
             {data.slots.length === 0 ? <p className="muted">No time slots defined yet.</p> : (
               <div className="grid-scroll">
