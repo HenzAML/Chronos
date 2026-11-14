@@ -60,6 +60,7 @@ class SolverCourse:
     duration_hours: int
     essential_equipment_ids: FrozenSet[int]
     preferred_equipment_ids: FrozenSet[int]
+    classes_per_week: int = 1
 
 
 @dataclass(frozen=True)
@@ -110,8 +111,38 @@ class Problem:
     slots: List[Slot]
     equipment_names: Dict[int, str] = field(default_factory=dict)
 
+    def __post_init__(self):
+        self._slot_at = {(s.day, s.hour): s for s in self.slots}
+
     def instructor_of(self, course: SolverCourse) -> SolverInstructor:
         return self.instructors[course.instructor_id]
+
+    def block(self, start: Slot, hours: int):
+        """The consecutive slots a class of this length covers, or None."""
+        out = [self._slot_at.get((start.day, start.hour + k)) for k in range(hours)]
+        return None if None in out else out
+
+    def rooms_for(self, course: SolverCourse, toggles: "Toggles") -> List[SolverRoom]:
+        """Rooms passing H4 (capacity) and H6 (essential equipment)."""
+        return [
+            r for r in self.rooms
+            if (not toggles.h4_capacity or r.capacity >= course.expected_students)
+            and (not toggles.h6_essential_equipment
+                 or course.essential_equipment_ids <= r.equipment_ids)
+        ]
+
+    def blocks_for(self, course: SolverCourse, toggles: "Toggles") -> List[List[Slot]]:
+        """Every block of the course's length the instructor can teach (H5)."""
+        inst = self.instructors.get(course.instructor_id)
+        if inst is None:
+            return []
+        out = []
+        for start in self.slots:
+            block = self.block(start, course.duration_hours)
+            if block and (not toggles.h5_availability
+                          or all(s.id in inst.available_slot_ids for s in block)):
+                out.append(block)
+        return out
 
     @property
     def size(self) -> Tuple[int, int, int, int]:
@@ -163,6 +194,7 @@ def load_problem(session) -> Problem:
             duration_hours=c.duration_hours,
             essential_equipment_ids=frozenset(c.essential_equipment_ids),
             preferred_equipment_ids=frozenset(c.preferred_equipment_ids),
+            classes_per_week=c.classes_per_week,
         ))
 
     from app.models import Equipment

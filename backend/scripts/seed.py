@@ -7,6 +7,8 @@ Usage:
     python scripts/seed.py --reset            # default: ~80 courses
     python scripts/seed.py --reset --size small
     python scripts/seed.py --reset --courses 120
+    python scripts/seed.py --reset --tight       # every soft constraint binds
+    python scripts/seed.py --reset --conflict    # some classes cannot be placed
 """
 
 import argparse
@@ -124,6 +126,18 @@ SIZE_RANGES = {
     "group": (12, 24),
     "meeting": (8, 14),
 }
+
+# Class length in hours, drawn per course. Tight keeps blocks short: its
+# instructors have 3-hour windows and only two rooms hold computers.
+DURATIONS = {
+    "lecture": [1, 2, 2, 3], "lab": [2, 3], "seminar": [2, 3],
+    "group": [1, 2], "meeting": [1],
+}
+TIGHT_DURATIONS = {
+    "lecture": [1, 1, 2], "lab": [1, 1, 2], "seminar": [1, 2],
+    "group": [1, 2], "meeting": [1],
+}
+TWICE_A_WEEK_SHARE = 0.12   # of lectures no longer than 2 hours
 
 # How the course mix is distributed.
 SESSION_MIX = (
@@ -287,11 +301,15 @@ def seed(n_courses, n_instructors, max_courses_per_instructor=3, tight=False):
         if topic_seen[topic] > 1:
             title = f"{title} - Sec. {topic_seen[topic]}"
 
+        duration = rng.choice((TIGHT_DURATIONS if tight else DURATIONS)[session_type])
+        twice = (session_type == "lecture" and duration <= 2
+                 and rng.random() < TWICE_A_WEEK_SHARE)
         course = Course(
             code=code,
             name=title,
             instructor_id=inst.id,
-            duration_hours=1,
+            duration_hours=duration,
+            classes_per_week=2 if twice else 1,
             expected_students=rng.randint(lo, hi),
             session_type=session_type,
         )
@@ -316,6 +334,69 @@ def seed(n_courses, n_instructors, max_courses_per_instructor=3, tight=False):
     ConstraintConfig.get()
     session.commit()
     return slots, list(equipment.values()), rooms, instructors, courses
+
+
+def add_conflicts(slots, equipment, rooms):
+    """Hand-made courses that cannot all be placed - one per reason the solver
+    reports. Added on top of the tight profile for the unhappy-path demo."""
+    session = db.session
+    eq = {e.code: e.id for e in equipment}
+
+    def teacher(name, days, hours):
+        inst = Instructor(name=name, prefer_morning=False, preferred_days=[],
+                          email=f"{name.split()[-1].lower()}@kmutt.ac.th")
+        session.add(inst)
+        session.flush()
+        session.add_all([
+            InstructorAvailability(instructor_id=inst.id, time_slot_id=s.id)
+            for s in slots if s.day in days and s.hour in hours
+        ])
+        return inst
+
+    def add(code, name, inst, students, session_type, duration=1, per_week=1, essential=()):
+        c = Course(code=code, name=name, instructor_id=inst.id, expected_students=students,
+                   session_type=session_type, duration_hours=duration,
+                   classes_per_week=per_week)
+        session.add(c)
+        session.flush()
+        session.add_all([
+            CourseEquipmentRequirement(course_id=c.id, equipment_id=eq[e], is_essential=True)
+            for e in essential
+        ])
+        return c
+
+    week = range(5)
+    day = range(9, 15)
+    out = [
+        # capacity: no room seats 200 (largest is 120).
+        add("DEMO901", "Freshman Orientation (too big)",
+            teacher("Dr. Demo Capacity", week, day), 200, "lecture"),
+        # essential_equipment: no tight room has lab benches.
+        add("DEMO902", "Electronics Lab (no lab benches)",
+            teacher("Dr. Demo Equipment", week, day), 20, "lab",
+            essential=["lab_bench"]),
+        # no_block: 7 hours in a row, but a day has 6 slots.
+        add("DEMO903", "All-Day Hackathon (too long)",
+            teacher("Dr. Demo Marathon", week, day), 20, "lecture", duration=7),
+        # availability: free only 09:00 and 11:00, never 2 hours in a row.
+        add("DEMO904", "Research Methods (split availability)",
+            teacher("Dr. Demo Gaps", [0, 2], [9, 11]), 20, "lecture", duration=2),
+        # same_course_day: two classes a week, instructor free on Mondays only.
+        add("DEMO905", "Calculus Review (one-day instructor)",
+            teacher("Dr. Demo Monday", [0], day), 20, "lecture", per_week=2),
+    ]
+    # instructor_contention: two 2-hour classes, one 2-hour window.
+    busy = teacher("Dr. Demo Overbooked", [1], [9, 10])
+    out += [add("DEMO906", "Ethics in Computing A", busy, 20, "lecture", duration=2),
+            add("DEMO907", "Ethics in Computing B", busy, 20, "lecture", duration=2)]
+    # room_contention: three 3-hour meetings need video conferencing for 18.
+    # Two rooms qualify (MR-601, SR-401); all three instructors are free Mon 09-12 only.
+    for n in (1, 2, 3):
+        out.append(add(f"DEMO91{n}", f"Faculty Board Meeting {n}",
+                       teacher(f"Dr. Demo Board{n}", [0], [9, 10, 11]), 18, "meeting",
+                       duration=3, essential=["video_conf"]))
+    session.commit()
+    return out
 
 
 def preflight(slots, rooms, instructors, courses):
@@ -383,7 +464,11 @@ def main():
     ap.add_argument("--instructors", type=int, help="override instructor count")
     ap.add_argument("--tight", action="store_true",
                     help="scarce rooms/slots/equipment so S2-S4 actually bite")
+    ap.add_argument("--conflict", action="store_true",
+                    help="tight profile plus courses that cannot all be placed, "
+                         "one per reason the solver reports")
     args = ap.parse_args()
+    args.tight = args.tight or args.conflict
 
     presets = {"small": (20, 8), "default": (80, 35), "large": (120, 45)}
     n_courses, n_instructors = presets[args.size]
@@ -405,6 +490,12 @@ def main():
         print(f"\nseeded [{'tight' if args.tight else 'loose'}]: {len(courses)} courses, "
               f"{len(instructors)} instructors, {len(rooms)} rooms, {len(slots)} time slots, "
               f"{len(equipment)} equipment types")
+
+        if args.conflict:
+            extra = add_conflicts(slots, equipment, rooms)
+            print(f"added {len(extra)} conflict courses (DEMO9xx) - generating "
+                  f"will leave some classes unscheduled, with reasons")
+            sys.exit(0)
 
         ok = preflight(slots, rooms, instructors, courses)
         print("\n" + ("PRE-FLIGHT PASSED - instance should be feasible"

@@ -1,4 +1,4 @@
-"""Orchestration: load -> diagnose -> solve -> persist.
+"""Orchestration: load -> solve -> persist.
 
 This is what POST /generate will call.
 """
@@ -7,8 +7,7 @@ from typing import Optional
 
 from app.extensions import db
 from app.models import ConstraintConfig, CourseAssignment, Schedule
-from app.solver.cpsat import solve
-from app.solver.preflight import diagnose
+from app.solver.cpsat import SolveResult, solve
 from app.solver.problem import Toggles, Weights, load_problem
 
 
@@ -21,8 +20,9 @@ def generate_schedule(
 ) -> Schedule:
     """Run the solver and record the outcome as a Schedule row.
 
-    A failed run is still persisted (status infeasible/failed plus a message), so
-    the coordinator can see *why* nothing came out rather than getting silence.
+    Classes that cannot fit are left out and listed in Schedule.unscheduled with
+    a reason each (status "partial"). A failed run is still persisted with a
+    message, so the coordinator never gets silence.
     """
     cfg = ConstraintConfig.get()
     weights = weights or Weights.from_config(cfg)
@@ -41,19 +41,10 @@ def generate_schedule(
         w4_room_type=weights.w4_room_type,
     )
 
-    # Cheap structural checks first - they explain *which* course is impossible,
-    # which CP-SAT's bare INFEASIBLE never would.
-    issues = diagnose(problem, toggles)
-    if issues:
-        schedule.status = "infeasible"
-        schedule.hard_violations = len(issues)
-        schedule.message = "\n".join(i.message for i in issues[:20])
-        if persist:
-            db.session.add(schedule)
-            db.session.commit()
-        return schedule
-
-    result = solve(problem, weights=weights, toggles=toggles, time_limit_seconds=limit)
+    try:
+        result = solve(problem, weights=weights, toggles=toggles, time_limit_seconds=limit)
+    except Exception as e:  # a solver crash is recorded as a failed run, never a 500
+        result = SolveResult(status="failed", message=f"The solver crashed: {e}")
 
     schedule.status = result.status
     schedule.solve_seconds = result.solve_seconds
@@ -63,9 +54,11 @@ def generate_schedule(
         schedule.soft_score = result.soft_score
         schedule.optimality_gap = result.optimality_gap
         schedule.hard_violations = 0
+        schedule.unscheduled = [u.as_dict() for u in result.unscheduled]
         schedule.assignments = [
             CourseAssignment(
-                course_id=p.course_id, room_id=p.room_id, time_slot_id=p.slot_id
+                course_id=p.course_id, class_index=p.class_index, room_id=p.room_id,
+                time_slot_id=p.slot_id, duration_hours=p.duration_hours,
             )
             for p in result.placements
         ]

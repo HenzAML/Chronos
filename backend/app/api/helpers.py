@@ -167,6 +167,7 @@ def course_json(c, deep=True):
         "id": c.id, "code": c.code, "name": c.name,
         "instructor_id": c.instructor_id,
         "duration_hours": c.duration_hours,
+        "classes_per_week": c.classes_per_week,
         "expected_students": c.expected_students,
         "session_type": c.session_type,
     }
@@ -211,8 +212,11 @@ def schedule_json(s, deep=False):
         "message": s.message,
         "created_at": s.created_at.isoformat() if s.created_at else None,
         "assignment_count": len(s.assignments),
+        "unscheduled_count": len(s.unscheduled or []),
+        "class_count": len(s.assignments) + len(s.unscheduled or []),
     }
     if deep:
+        out["unscheduled"] = list(s.unscheduled or [])
         out["assignments"] = [assignment_json(a) for a in sorted(
             s.assignments, key=lambda a: (a.time_slot.day, a.time_slot.hour, a.room.code))]
     return out
@@ -221,8 +225,12 @@ def schedule_json(s, deep=False):
 def assignment_json(a):
     return {
         "id": a.id,
+        "class_index": a.class_index,
+        "duration_hours": a.duration_hours,
+        "end_hour": a.time_slot.hour + a.duration_hours,
         "course": {"id": a.course.id, "code": a.course.code, "name": a.course.name,
                    "session_type": a.course.session_type,
+                   "classes_per_week": a.course.classes_per_week,
                    "expected_students": a.course.expected_students,
                    "instructor": a.course.instructor.name if a.course.instructor else None},
         "room": {"id": a.room.id, "code": a.room.code, "capacity": a.room.capacity},

@@ -18,6 +18,8 @@ def _apply(course, data):
         course.expected_students = as_int(data, "expected_students", minimum=1)
     if "duration_hours" in data:
         course.duration_hours = as_int(data, "duration_hours", minimum=1)
+    if "classes_per_week" in data:
+        course.classes_per_week = as_int(data, "classes_per_week", minimum=1)
     if "session_type" in data:
         st = str(data["session_type"]).strip()
         if st not in SESSION_TYPES:

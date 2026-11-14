@@ -16,10 +16,9 @@ bp = Blueprint("schedules", __name__, url_prefix="/api")
 def generate():
     """Run the solver.
 
-    Returns 200 with the persisted Schedule either way - an infeasible instance
-    is a legitimate, recorded result, not a client error. Check `status`:
-    optimal | feasible | infeasible | failed. When infeasible, `message` explains
-    which course could not be placed and why.
+    Always returns 200 with the persisted Schedule. Check `status`:
+    optimal | feasible (every class placed), partial (best schedule found, with
+    `unscheduled` listing each class left out and why), failed (no data).
     """
     data = request.get_json(silent=True) or {}
     if not isinstance(data, dict):
@@ -51,7 +50,7 @@ def generate():
 
     payload = schedule_json(schedule, deep=True)
     result = getattr(schedule, "last_result", None)
-    if result is not None:
+    if result is not None and result.ok:
         payload["diagnostics"] = {
             "num_variables": result.num_variables,
             "pruned_triples": result.pruned_triples,
@@ -95,7 +94,9 @@ def get_grid(schedule_id):
         day = str(a.time_slot.day)
         hour = str(a.time_slot.hour)
         grid.setdefault(day, {}).setdefault(hour, []).append(assignment_json(a))
-    hours = sorted({a.time_slot.hour for a in s.assignments})
+    # A block is listed under its start hour; hours covers every hour it touches.
+    hours = sorted({a.time_slot.hour + k for a in s.assignments
+                    for k in range(a.duration_hours)})
     return jsonify({
         "schedule": schedule_json(s),
         "hours": hours,

@@ -5,9 +5,11 @@ from app.config import Config
 from app.extensions import db, migrate, jwt
 
 
-def create_app():
+def create_app(database_url=None):
     app = Flask(__name__)
     app.config.from_object(Config)
+    if database_url:        # tests point the app at their own database
+        app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 
     db.init_app(app)
 

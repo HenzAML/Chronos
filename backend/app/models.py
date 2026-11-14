@@ -15,7 +15,9 @@ from app.extensions import db
 SESSION_TYPES = ("lecture", "lab", "group", "seminar", "meeting")
 
 # Schedule.status values.
-SCHEDULE_STATUSES = ("pending", "optimal", "feasible", "infeasible", "failed")
+# optimal/feasible: every class placed. partial: some left out (see
+# Schedule.unscheduled). infeasible is legacy - no longer produced.
+SCHEDULE_STATUSES = ("pending", "optimal", "feasible", "partial", "infeasible", "failed")
 
 DAY_NAMES = ("Mon", "Tue", "Wed", "Thu", "Fri")
 
@@ -171,6 +173,7 @@ class Course(db.Model):
     __table_args__ = (
         db.CheckConstraint("expected_students > 0", name="ck_course_students_positive"),
         db.CheckConstraint("duration_hours > 0", name="ck_course_duration_positive"),
+        db.CheckConstraint("classes_per_week > 0", name="ck_course_classes_positive"),
         db.CheckConstraint(
             "session_type in ('lecture', 'lab', 'group', 'seminar', 'meeting')",
             name="ck_course_session_type",
@@ -183,7 +186,11 @@ class Course(db.Model):
     instructor_id = db.Column(
         db.Integer, db.ForeignKey("instructor.id", ondelete="RESTRICT"), nullable=False
     )
+    # A course meets classes_per_week times; each class is one continuous
+    # block of duration_hours.
     duration_hours = db.Column(db.Integer, nullable=False, default=1)
+    classes_per_week = db.Column(db.Integer, nullable=False, default=1,
+                                 server_default="1")
     expected_students = db.Column(db.Integer, nullable=False)
     session_type = db.Column(db.String(20), nullable=False, default="lecture")
 
@@ -269,7 +276,7 @@ class Schedule(db.Model):
     __tablename__ = "schedule"
     __table_args__ = (
         db.CheckConstraint(
-            "status in ('pending', 'optimal', 'feasible', 'infeasible', 'failed')",
+            "status in ('pending', 'optimal', 'feasible', 'partial', 'infeasible', 'failed')",
             name="ck_schedule_status",
         ),
     )
@@ -291,8 +298,12 @@ class Schedule(db.Model):
     w3_equipment = db.Column(db.Integer, nullable=False, default=3)
     w4_room_type = db.Column(db.Integer, nullable=False, default=4)
 
-    # Human-readable reason when status is infeasible/failed.
+    # Human-readable summary when status is partial/failed.
     message = db.Column(db.Text)
+
+    # Classes left out, one dict each: course_id, course_code, course_name,
+    # class_index, code, message, blockers. See app/solver/explain.py.
+    unscheduled = db.Column(db.JSON, nullable=False, default=list, server_default="[]")
 
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=_utcnow)
 
@@ -306,11 +317,12 @@ class Schedule(db.Model):
 
 
 class CourseAssignment(db.Model):
-    """One solved x[c, r, t] == 1."""
+    """One placed class: a block of duration_hours starting at time_slot."""
 
     __tablename__ = "course_assignment"
     __table_args__ = (
-        db.UniqueConstraint("schedule_id", "course_id", name="uq_assignment_schedule_course"),
+        db.UniqueConstraint("schedule_id", "course_id", "class_index",
+                            name="uq_assignment_schedule_course_class"),
     )
 
     id = db.Column(db.Integer, primary_key=True)
@@ -326,6 +338,10 @@ class CourseAssignment(db.Model):
     time_slot_id = db.Column(
         db.Integer, db.ForeignKey("time_slot.id", ondelete="RESTRICT"), nullable=False
     )
+
+    class_index = db.Column(db.Integer, nullable=False, default=1, server_default="1")
+    # Copied from the course at solve time so old schedules survive course edits.
+    duration_hours = db.Column(db.Integer, nullable=False, default=1, server_default="1")
 
     schedule = db.relationship("Schedule", back_populates="assignments")
     course = db.relationship("Course")
