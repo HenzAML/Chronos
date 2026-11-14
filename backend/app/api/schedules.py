@@ -99,6 +99,7 @@ def get_grid(schedule_id):
                     for k in range(a.duration_hours)})
     return jsonify({
         "schedule": schedule_json(s),
+        "unscheduled": list(s.unscheduled or []),
         "hours": hours,
         "days": sorted({a.time_slot.day for a in s.assignments}),
         "grid": grid,

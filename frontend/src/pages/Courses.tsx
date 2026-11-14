@@ -35,7 +35,7 @@ export default function Courses() {
   if (!data) return null
 
   const blank = (): Draft => ({
-    code: '', name: '', expected_students: 30, duration_hours: 1,
+    code: '', name: '', expected_students: 30, duration_hours: 1, classes_per_week: 1,
     session_type: 'lecture',
     instructor_id: data.instructors[0]?.id,
     equipment_requirements: [],
@@ -58,6 +58,7 @@ export default function Courses() {
       instructor_id: editing.instructor_id,
       expected_students: editing.expected_students,
       duration_hours: editing.duration_hours,
+      classes_per_week: editing.classes_per_week,
       session_type: editing.session_type,
       equipment_requirements: editing.equipment_requirements,
     }
@@ -112,7 +113,7 @@ export default function Courses() {
       {visible.length === 0 ? <Empty>No courses match.</Empty> : (
         <table className="table">
           <thead>
-            <tr><th>Code</th><th>Name</th><th>Type</th><th>Students</th>
+            <tr><th>Code</th><th>Name</th><th>Type</th><th>Classes</th><th>Students</th>
                 <th>Instructor</th><th>Equipment</th><th /></tr>
           </thead>
           <tbody>
@@ -121,6 +122,7 @@ export default function Courses() {
                 <td><strong>{c.code}</strong></td>
                 <td>{c.name}</td>
                 <td><span className={`chip type-${c.session_type}`}>{c.session_type}</span></td>
+                <td>{c.classes_per_week > 1 ? `${c.classes_per_week} × ` : ''}{c.duration_hours}h</td>
                 <td>{c.expected_students}</td>
                 <td>{c.instructor?.name ?? <span className="muted">—</span>}</td>
                 <td>
@@ -163,6 +165,16 @@ export default function Courses() {
             <Field label="Expected students"><input className="input" type="number" min={1}
               value={editing.expected_students ?? 0}
               onChange={(e) => setEditing({ ...editing, expected_students: Number(e.target.value) })} /></Field>
+            <Field label="Class length (hours)" hint="One continuous block, same room.">
+              <input className="input" type="number" min={1} max={12}
+                value={editing.duration_hours ?? 1}
+                onChange={(e) => setEditing({ ...editing, duration_hours: Number(e.target.value) })} />
+            </Field>
+            <Field label="Classes per week" hint="More than one: each on a different day.">
+              <input className="input" type="number" min={1} max={5}
+                value={editing.classes_per_week ?? 1}
+                onChange={(e) => setEditing({ ...editing, classes_per_week: Number(e.target.value) })} />
+            </Field>
             <Field label="Instructor">
               <select className="select" value={editing.instructor_id ?? ''}
                 onChange={(e) => setEditing({ ...editing, instructor_id: Number(e.target.value) })}>
@@ -172,7 +184,7 @@ export default function Courses() {
           </div>
 
           <Field label="Equipment requirements"
-            hint="Essential is enforced as a hard constraint (H6) and can make the instance infeasible. Preferred only adds soft penalty S3.">
+            hint="Essential is enforced as a hard constraint (H6): a class with no suitable room is left out of the schedule. Preferred only adds soft penalty S3.">
             <table className="table table-tight">
               <thead><tr><th>Item</th><th>Not needed</th><th>Preferred</th><th>Essential</th></tr></thead>
               <tbody>

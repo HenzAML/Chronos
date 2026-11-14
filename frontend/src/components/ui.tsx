@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 import { ApiError } from '../api/client'
+import { REASON_LABELS } from '../types'
+import type { Unscheduled } from '../types'
 
 export function Spinner({ label = 'Loading…' }: { label?: string }) {
   return <div className="state"><span className="spinner" />{label}</div>
@@ -60,9 +62,28 @@ export function Badge({ kind, children }: { kind?: string; children: ReactNode }
 export function StatusBadge({ status }: { status: string }) {
   const kind = status === 'optimal' ? 'good'
     : status === 'feasible' ? 'ok'
+    : status === 'partial' ? 'warn'
     : status === 'infeasible' ? 'bad'
     : status === 'failed' ? 'bad' : 'muted'
   return <Badge kind={kind}>{status}</Badge>
+}
+
+/** Classes the solver left out, each with its reason. */
+export function UnscheduledList({ items }: { items: Unscheduled[] }) {
+  return (
+    <ul className="unscheduled">
+      {items.map((u) => (
+        <li key={`${u.course_id}-${u.class_index}`}>
+          <div className="unscheduled-head">
+            <strong>{u.course_code}</strong>
+            <span className="muted">{u.course_name}</span>
+            <Badge kind="warn">{REASON_LABELS[u.code] ?? u.code}</Badge>
+          </div>
+          <p>{u.message}</p>
+        </li>
+      ))}
+    </ul>
+  )
 }
 
 export function ConfirmButton(

@@ -63,7 +63,9 @@ export interface Course {
   code: string
   name: string
   instructor_id: number
+  /** Length of each class, in hours (one continuous block). */
   duration_hours: number
+  classes_per_week: number
   expected_students: number
   session_type: SessionType
   instructor?: Instructor | null
@@ -85,11 +87,16 @@ export interface ConstraintConfig {
 
 export interface Assignment {
   id: number
+  class_index: number
+  duration_hours: number
+  /** Hour the block ends (exclusive). */
+  end_hour: number
   course: {
     id: number
     code: string
     name: string
     session_type: SessionType
+    classes_per_week: number
     expected_students: number
     instructor: string | null
   }
@@ -97,7 +104,41 @@ export interface Assignment {
   time_slot: TimeSlot
 }
 
-export type ScheduleStatus = 'pending' | 'optimal' | 'feasible' | 'infeasible' | 'failed'
+export type ScheduleStatus =
+  'pending' | 'optimal' | 'feasible' | 'partial' | 'infeasible' | 'failed'
+
+/** A class the solver left out, and why. Mirrors app/solver/explain.py. */
+export interface Unscheduled {
+  course_id: number
+  course_code: string
+  course_name: string
+  class_index: number
+  code: string
+  message: string
+  blockers: {
+    kind: 'room' | 'instructor'
+    course_code: string
+    class_index: number
+    room_code: string
+    day: number
+    hour: number
+    duration_hours: number
+  }[]
+}
+
+export const REASON_LABELS: Record<string, string> = {
+  capacity: 'Room too small',
+  essential_equipment: 'Missing equipment',
+  capacity_and_equipment: 'No room fits',
+  no_block: 'Class too long',
+  availability: 'Instructor availability',
+  no_instructor: 'No instructor',
+  room_contention: 'Rooms taken',
+  instructor_contention: 'Instructor busy',
+  contention: 'Rooms and instructor busy',
+  same_course_day: 'Needs another day',
+  time_limit: 'Solver ran out of time',
+}
 
 export interface PenaltyBreakdown {
   S1_morning: number
@@ -128,7 +169,11 @@ export interface Schedule {
   message: string | null
   created_at: string | null
   assignment_count: number
+  unscheduled_count: number
+  /** Classes placed plus classes left out. */
+  class_count: number
   assignments?: Assignment[]
+  unscheduled?: Unscheduled[]
   diagnostics?: {
     num_variables: number
     pruned_triples: number
@@ -138,6 +183,7 @@ export interface Schedule {
 
 export interface Grid {
   schedule: Schedule
+  unscheduled: Unscheduled[]
   hours: number[]
   days: number[]
   grid: Record<string, Record<string, Assignment[]>>

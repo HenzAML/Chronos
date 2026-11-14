@@ -264,3 +264,12 @@
   .sidebar nav { flex-direction: row; flex-wrap: wrap; }
   .content { padding: 18px; }
 }
+
+/* ---- partial schedules ---- */
+.badge-warn { background: var(--warn-soft); color: #6d4700; }
+.unscheduled { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 10px; }
+.unscheduled li { border-left: 3px solid #e0b25a; padding-left: 10px; }
+.unscheduled-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.unscheduled p { margin: 2px 0 0; }
+/* Later hours of a multi-hour class. */
+.event-cont { opacity: .55; border-style: dashed; }

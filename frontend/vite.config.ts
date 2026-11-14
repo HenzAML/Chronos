@@ -8,7 +8,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        // Flask dev server. NOT 5000 - macOS AirPlay Receiver squats there.
+        // Flask dev server (5001: macOS AirPlay Receiver owns 5000).
         target: 'http://127.0.0.1:5001',
         changeOrigin: true,
       },

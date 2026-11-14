@@ -192,3 +192,35 @@ def test_no_courses_is_a_failed_run_with_a_message():
 
     assert result.status == "failed"
     assert "course" in result.message.lower()
+
+
+def test_crowded_week_has_no_double_booking_and_respects_availability():
+    # 30 courses of mixed length fight over 2 rooms and 20 slots: far too many.
+    import random
+    rng = random.Random(7)
+    slots = make_slots({d: [9, 10, 11, 12] for d in range(5)})
+    teachers = [inst(i, rng.sample(slots, 12)) for i in range(1, 9)]
+    courses = [course(n, instructor_id=rng.randint(1, 8), duration=rng.choice([1, 2, 3]),
+                      per_week=rng.choice([1, 1, 2])) for n in range(1, 31)]
+    p = problem(courses, [room(1), room(2)], slots, teachers)
+    result = solve(p, time_limit_seconds=10)
+
+    by_id = {s.id: s for s in slots}
+    teacher_of = {c.id: c.instructor_id for c in courses}
+    room_hours, teacher_hours, course_days = set(), set(), set()
+    for pl in result.placements:
+        start = by_id[pl.slot_id]
+        assert (pl.course_id, start.day) not in course_days
+        course_days.add((pl.course_id, start.day))
+        for k in range(pl.duration_hours):
+            hour = (start.day, start.hour + k)
+            slot = next(s for s in slots if (s.day, s.hour) == hour)   # block stays in the grid
+            assert slot.id in p.instructors[teacher_of[pl.course_id]].available_slot_ids
+            assert (pl.room_id, hour) not in room_hours
+            assert (teacher_of[pl.course_id], hour) not in teacher_hours
+            room_hours.add((pl.room_id, hour))
+            teacher_hours.add((teacher_of[pl.course_id], hour))
+
+    assert result.status == "partial"
+    assert len(result.placements) + len(result.unscheduled) == result.class_count
+    assert all(u.message and u.code != "time_limit" for u in result.unscheduled)

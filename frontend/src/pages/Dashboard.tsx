@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import { useAsync } from '../components/useAsync'
-import { ErrorBox, Spinner, StatusBadge } from '../components/ui'
+import { ErrorBox, Spinner, StatusBadge, UnscheduledList } from '../components/ui'
 import type { Course, Instructor, Room, Schedule, TimeSlot } from '../types'
 
 interface Overview {
@@ -47,6 +47,8 @@ export default function Dashboard() {
 
   const { courses, instructors, rooms, slots, schedules } = data
   const capacity = rooms.length * slots.length
+  // Room-hours the catalogue needs: every class of every course, full length.
+  const demand = courses.reduce((n, c) => n + c.duration_hours * c.classes_per_week, 0)
 
   return (
     <>
@@ -69,7 +71,7 @@ export default function Dashboard() {
         <Tile label="Rooms" value={rooms.length} to="/rooms" nav={nav} />
         <Tile label="Time slots" value={slots.length} />
         <Tile label="Room-slots" value={capacity}
-          hint={capacity ? `${((courses.length / capacity) * 100).toFixed(0)}% utilisation` : undefined} />
+          hint={capacity ? `${((demand / capacity) * 100).toFixed(0)}% needed by classes` : undefined} />
         <Tile label="Schedules" value={schedules.length} to="/timetable" nav={nav} />
       </section>
 
@@ -81,7 +83,7 @@ export default function Dashboard() {
             <table className="table">
               <thead>
                 <tr><th>#</th><th>Name</th><th>Status</th><th>Z</th><th>Gap</th>
-                    <th>Time</th><th>Assignments</th><th /></tr>
+                    <th>Time</th><th>Classes placed</th><th /></tr>
               </thead>
               <tbody>
                 {schedules.slice(0, 8).map((s) => (
@@ -93,7 +95,7 @@ export default function Dashboard() {
                     <td>{s.optimality_gap === null ? '—'
                       : s.optimality_gap === 0 ? '0%' : `${(s.optimality_gap * 100).toFixed(1)}%`}</td>
                     <td>{s.solve_seconds !== null ? `${s.solve_seconds.toFixed(2)}s` : '—'}</td>
-                    <td>{s.assignment_count}</td>
+                    <td>{s.assignment_count} / {s.class_count}</td>
                     <td><button className="btn btn-sm" onClick={() => nav('/timetable')}>View</button></td>
                   </tr>
                 ))}
@@ -121,20 +123,24 @@ function Tile(
 }
 
 function RunResult({ schedule, onView }: { schedule: Schedule; onView: () => void }) {
-  const ok = schedule.status === 'optimal' || schedule.status === 'feasible'
+  const complete = schedule.status === 'optimal' || schedule.status === 'feasible'
+  const ok = complete || schedule.status === 'partial'
   const pb = schedule.diagnostics?.penalty_breakdown
+  const left = schedule.unscheduled ?? []
   return (
-    <div className={`alert ${ok ? 'alert-ok' : 'alert-warn'}`}>
+    <div className={`alert ${complete ? 'alert-ok' : ok ? 'alert-warn' : 'alert-error'}`}>
       <div className="run-head">
         <strong>
-          {ok ? `Schedule #${schedule.id} generated — ${schedule.status}` : 'No timetable produced'}
+          {complete ? `Schedule #${schedule.id} generated — ${schedule.status}`
+            : ok ? `Schedule #${schedule.id}: best timetable found, ${left.length} of ${schedule.class_count} classes left out`
+            : 'No timetable produced'}
         </strong>
         {ok && <button className="btn btn-sm" onClick={onView}>Open timetable</button>}
       </div>
       {ok ? (
         <>
           <p>
-            Z = {schedule.soft_score} · {schedule.assignment_count} assignments ·{' '}
+            Z = {schedule.soft_score} · {schedule.assignment_count} of {schedule.class_count} classes placed ·{' '}
             {schedule.solve_seconds?.toFixed(2)}s
             {schedule.optimality_gap === 0 && ' · proven optimal'}
           </p>
@@ -146,9 +152,10 @@ function RunResult({ schedule, onView }: { schedule: Schedule; onView: () => voi
               <li>S4 room type <b>{pb.S4_room_type}</b> <span className="muted">({pb.S4_room_type_count})</span></li>
             </ul>
           )}
+          {left.length > 0 && <UnscheduledList items={left} />}
         </>
       ) : (
-        <ul>{(schedule.message ?? 'Unknown reason').split('\n').map((m, i) => <li key={i}>{m}</li>)}</ul>
+        <p>{schedule.message ?? 'Unknown reason.'}</p>
       )}
     </div>
   )

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
 import { useAsync } from '../components/useAsync'
-import { Empty, ErrorBox, Spinner, StatusBadge } from '../components/ui'
+import { Empty, ErrorBox, Spinner, StatusBadge, UnscheduledList } from '../components/ui'
 import { DAY_NAMES } from '../types'
 import type { Assignment, Grid, Schedule } from '../types'
 
@@ -72,10 +72,19 @@ export default function Timetable() {
       {loadingGrid && <Spinner label="Loading timetable…" />}
       {gridError && <ErrorBox error={gridError} />}
 
+      {!loadingGrid && grid && grid.unscheduled.length > 0 && (
+        <div className="alert alert-warn">
+          <strong>
+            {grid.unscheduled.length} of {grid.schedule.class_count} classes could not be
+            scheduled. This is the best timetable found without them.
+          </strong>
+          <UnscheduledList items={grid.unscheduled} />
+        </div>
+      )}
+
       {!loadingGrid && grid && (
         grid.hours.length === 0
-          ? <Empty>This schedule has no assignments{current?.status === 'infeasible'
-              ? ' because the instance was infeasible — see the message above.' : '.'}</Empty>
+          ? <Empty>No class could be placed in this schedule.</Empty>
           : <GridView grid={grid} onPick={setFocus} />
       )}
 
@@ -110,7 +119,9 @@ function ScheduleSummary({ schedule }: { schedule: Schedule }) {
         <Stat label="Solve time">
           {schedule.solve_seconds !== null ? `${schedule.solve_seconds.toFixed(2)}s` : '—'}
         </Stat>
-        <Stat label="Assignments">{schedule.assignment_count}</Stat>
+        <Stat label="Classes placed">
+          {schedule.assignment_count} / {schedule.class_count}
+        </Stat>
         <Stat label="Weights">
           <code className="tiny">
             {schedule.weights.w1_morning}/{schedule.weights.w2_preferred_day}/
@@ -118,10 +129,10 @@ function ScheduleSummary({ schedule }: { schedule: Schedule }) {
           </code>
         </Stat>
       </div>
-      {schedule.message && (
-        <div className="alert alert-warn">
-          <strong>Solver could not produce a timetable</strong>
-          <ul>{schedule.message.split('\n').map((m, i) => <li key={i}>{m}</li>)}</ul>
+      {(schedule.status === 'failed' || schedule.status === 'infeasible') && (
+        <div className="alert alert-error">
+          <strong>No timetable was produced</strong>
+          <p>{schedule.message ?? 'Unknown reason.'}</p>
         </div>
       )}
     </div>
@@ -132,8 +143,14 @@ function Stat({ label, children }: { label: string; children: React.ReactNode })
   return <div className="stat"><span className="stat-label">{label}</span><span className="stat-value">{children}</span></div>
 }
 
+const hh = (h: number) => `${String(h).padStart(2, '0')}:00`
+
 function GridView({ grid, onPick }: { grid: Grid; onPick: (a: Assignment) => void }) {
   const { days, hours } = grid
+  // The API lists a class under its start hour. A multi-hour class is shown in
+  // every hour it covers; the later hours are drawn faded.
+  const byDay = new Map(days.map((d) =>
+    [d, Object.values(grid.grid[String(d)] ?? {}).flat()] as const))
   return (
     <div className="grid-scroll">
       <table className="timetable">
@@ -146,18 +163,29 @@ function GridView({ grid, onPick }: { grid: Grid; onPick: (a: Assignment) => voi
         <tbody>
           {hours.map((h) => (
             <tr key={h}>
-              <th className="time-col">{String(h).padStart(2, '0')}:00</th>
+              <th className="time-col">{hh(h)}</th>
               {days.map((d) => {
-                const cell = grid.grid[String(d)]?.[String(h)] ?? []
+                const cell = (byDay.get(d) ?? [])
+                  .filter((a) => a.time_slot.hour <= h && h < a.end_hour)
+                  .sort((a, b) => a.room.code.localeCompare(b.room.code))
                 return (
                   <td key={d}>
-                    {cell.map((a) => (
-                      <button key={a.id} className={`event ${TYPE_CLASS[a.course.session_type] ?? ''}`}
-                        onClick={() => onPick(a)} title={`${a.course.name} · ${a.course.instructor ?? ''}`}>
-                        <strong>{a.course.code}</strong>
-                        <span>{a.room.code}</span>
-                      </button>
-                    ))}
+                    {cell.map((a) => {
+                      const starts = a.time_slot.hour === h
+                      return (
+                        <button key={a.id}
+                          className={`event ${TYPE_CLASS[a.course.session_type] ?? ''}${starts ? '' : ' event-cont'}`}
+                          onClick={() => onPick(a)}
+                          title={`${a.course.name} · ${a.course.instructor ?? ''} · ${hh(a.time_slot.hour)}–${hh(a.end_hour)}`}>
+                          <strong>{a.course.code}</strong>
+                          <span>
+                            {a.room.code}
+                            {starts && a.duration_hours > 1 && ` · ${a.duration_hours}h`}
+                            {!starts && ' · cont.'}
+                          </span>
+                        </button>
+                      )
+                    })}
                   </td>
                 )
               })}
@@ -180,7 +208,10 @@ function DetailPanel({ assignment, onClose }: { assignment: Assignment; onClose:
       </header>
       <p className="detail-title">{course.name}</p>
       <dl>
-        <dt>When</dt><dd>{time_slot.label}</dd>
+        <dt>When</dt><dd>{time_slot.label}–{hh(assignment.end_hour)}</dd>
+        {course.classes_per_week > 1 && (
+          <><dt>Class</dt><dd>{assignment.class_index} of {course.classes_per_week} this week</dd></>
+        )}
         <dt>Room</dt><dd>{room.code}</dd>
         <dt>Instructor</dt><dd>{course.instructor ?? '—'}</dd>
         <dt>Type</dt><dd>{course.session_type}</dd>
