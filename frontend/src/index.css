@@ -1,50 +1,63 @@
-/* Theme taken from the Chronos D-Day poster and logo sheet. */
+/* Theme sampled from the Chronos D-Day poster (Chronos Design/Chronos_A1_300ppi.pdf)
+   and the wordmark: bright blue, navy, yellow sparks, sky-blue tints. */
 :root {
-  --bg: #f3f3fc;
+  --bg: #f2f9ff;
   --surface: #ffffff;
-  --border: #e3e4f6;
-  --text: #1f2033;
-  --ink: #15171a;            /* wordmark black */
-  --muted: #6b7084;
-  --accent: #4f46e5;         /* bright indigo */
-  --accent-deep: #312e81;    /* deep indigo */
-  --accent-pale: #c7d2fe;
-  --accent-soft: #eef0fe;
-  --teal: #0891b2;
-  --teal-soft: #e0f4f8;
-  --orange: #ea580c;
-  --orange-soft: #fff1e7;
-  --good: #0e7490;
-  --good-soft: var(--teal-soft);
-  --warn: #9a3412;
-  --warn-soft: var(--orange-soft);
+  --border: #d3e8fb;
+  --text: #14284b;
+  --ink: #01204b;            /* wordmark navy */
+  --muted: #5d6f8c;
+  --accent: #0b6fe0;         /* poster blue, dark enough for text on white */
+  --accent-bright: #1c94fc;  /* light end of the pill gradient */
+  --accent-deep: #01204b;
+  --accent-pale: #bfe1fd;
+  --accent-soft: #e2f2ff;
+  --yellow: #fec60d;         /* wordmark sparks */
+  --yellow-soft: #fff5cf;
+  --green: #17a06a;
+  --green-soft: #d6f8e3;
+  --purple: #7c74e4;
+  --purple-soft: #e7e5fc;
+  --cream: #fdebc4;
+  --good: #0f7a50;
+  --good-soft: var(--green-soft);
+  --warn: #6b4a00;
+  --warn-soft: var(--yellow-soft);
   --bad: #b3261e;
   --bad-soft: #fdeceb;
-  --radius: 14px;
-  --shadow: 0 1px 2px rgba(49, 46, 129, .06), 0 8px 24px rgba(49, 46, 129, .08);
-  --serif: "Source Serif 4 Variable", "Source Serif 4", Georgia, "Times New Roman", serif;
+  --radius: 18px;
+  --pill: linear-gradient(135deg, var(--accent-bright), #046cdc);
+  --shadow: 0 2px 4px rgba(1, 32, 75, .05), 0 10px 28px rgba(11, 111, 224, .12);
+  --display: Poppins, "Segoe UI", system-ui, sans-serif;
   --sans: "Inter Variable", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  /* The three yellow strokes from the wordmark. */
+  --spark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg stroke='%23fec60d' stroke-width='6' stroke-linecap='round'%3E%3Cpath d='M9 5l3 12'/%3E%3Cpath d='M24 6l-4 12'/%3E%3Cpath d='M36 16l-10 8'/%3E%3C/g%3E%3C/svg%3E");
   color-scheme: light;
 }
 
 * { box-sizing: border-box; }
 
-html, body, #root { height: 100%; }
+html, body, #root { min-height: 100%; }
 
 body {
   margin: 0;
-  background: var(--bg);
   color: var(--text);
   font: 14px/1.5 var(--sans);
   -webkit-font-smoothing: antialiased;
+  /* Soft sky and a wave along the bottom, as on the poster. */
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 220' preserveAspectRatio='none'%3E%3Cpath fill='%23cfeaff' fill-opacity='.7' d='M0 120c240-80 480-80 720-20s480 60 720-30v150H0z'/%3E%3Cpath fill='%23b6defd' fill-opacity='.55' d='M0 170c260-60 520-50 760 0s460 30 680-40v90H0z'/%3E%3C/svg%3E") bottom / 100% 220px no-repeat fixed,
+    radial-gradient(900px 420px at 100% 0, #cdeaff 0, transparent 70%) fixed,
+    radial-gradient(700px 380px at 20% 0, #e4f4ff 0, transparent 70%) fixed,
+    var(--bg);
 }
 
 h1 {
-  font: 800 30px/1.1 var(--serif); color: var(--ink);
+  font: 800 30px/1.1 var(--display); color: var(--ink);
   margin: 0; letter-spacing: -.01em;
 }
-h2 { font-size: 15px; margin: 0 0 12px; color: var(--accent-deep); }
+h2 { font: 700 15px var(--display); margin: 0 0 12px; color: var(--ink); }
 p { margin: 4px 0 0; }
 code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }

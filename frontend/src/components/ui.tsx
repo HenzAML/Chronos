@@ -25,7 +25,7 @@ export function ErrorBox({ error, onRetry }: { error: unknown; onRetry?: () => v
 export function Empty({ children }: { children: ReactNode }) {
   return (
     <div className="state state-empty">
-      <img src="/chronos-mascot.jpg" alt="" />
+      <img src="/chronos-mascot.svg" alt="" />
       <div>{children}</div>
     </div>
   )

@@ -52,9 +52,11 @@ export default function Dashboard() {
 
   return (
     <>
-      <header className="page-head">
+      <header className="page-head hero">
+        <img className="hero-mascot" src="/chronos-mascot.svg" alt="" />
         <div>
           <h1>Dashboard</h1>
+          <p className="hero-tag">Smarter schedules. Better learning.</p>
           <p className="muted">Overview and schedule generation.</p>
         </div>
         <button className="btn btn-primary" onClick={generate} disabled={running || !courses.length}>
