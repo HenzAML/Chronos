@@ -356,3 +356,9 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
 .unscheduled-head strong { color: var(--ink); font-family: var(--display); }
 .unscheduled-head .muted { color: var(--muted); opacity: 1; }
 .unscheduled p { margin: 2px 0 0; }
+.fixes-bar { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.fixes-bar .state { padding: 0; color: inherit; }
+.unscheduled .fixes { list-style: disc; display: block; margin: 6px 0 0; padding-left: 18px; }
+.unscheduled .fixes li { background: none; border-radius: 0; padding: 0; }
+.unscheduled .fixes b { color: var(--ink); }
+.unscheduled .fixes .muted { color: var(--muted); opacity: 1; }

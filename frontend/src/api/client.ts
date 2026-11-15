@@ -1,5 +1,5 @@
 import type {
-  ConstraintConfig, Course, CourseInput, Equipment, Grid, Instructor, Room, RoomInput,
+  ConstraintConfig, Course, CourseInput, Equipment, Fix, Grid, Instructor, Room, RoomInput,
   Schedule, TimeSlot,
 } from '../types'
 
@@ -105,6 +105,7 @@ export const api = {
     list: () => get<Schedule[]>('/schedules'),
     get: (id: number) => get<Schedule>(`/schedules/${id}`),
     grid: (id: number) => get<Grid>(`/schedules/${id}/grid`),
+    suggestions: (id: number) => post<Fix[]>(`/schedules/${id}/suggestions`),
     remove: (id: number) => del(`/schedules/${id}`),
   },
 

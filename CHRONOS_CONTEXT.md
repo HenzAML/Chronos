@@ -58,8 +58,12 @@ message and the classes blocking it (`backend/app/solver/explain.py`):
 | `time_limit` | a free placement exists but the solver ran out of time |
 
 Contention reasons describe what blocks the class in the schedule found; they do not prove
-which single change fixes it. Verified what-if suggestions (re-solve with one change) are
-the next step — `solve()` takes a plain `Problem`, so a what-if is copy, change, solve again.
+which single change fixes it. Verified fixes do: the "Find fixes" button calls
+`POST /schedules/:id/suggestions`, which tries single changes per left-out class (shorten the
+class, widen the instructor's availability, one more room like a blocking room, a room big
+enough / with the essential equipment), re-solves a copy of the `Problem` for each, and
+reports only changes that place the class and raise the total placed
+(`backend/app/solver/whatif.py`). Computed on request, not stored.
 
 S1 on a block: broken if any hour of the block is at 12:00 or later; charged once per class.
 
@@ -202,8 +206,8 @@ The API listens on 5001 because macOS AirPlay Receiver owns 5000. Open the site 
 
 ### Remaining
 
-- Verified what-if suggestions: "Find fixes" rerun on a partial schedule
-- AI-written suggestions via OpenRouter, built on the stored reasons
+- ~~Verified what-if suggestions: "Find fixes" rerun on a partial schedule~~ — **done 2026-11-15**
+- AI-written suggestions via OpenRouter, built on the stored reasons and verified fixes
 - Per-course priority (which classes to drop first)
 - Tests: solver (no database), API (Postgres), browser (Playwright, `frontend/e2e`). No component tests
 - Auth deferred (`User`, `/auth/*`, login page) — last phase

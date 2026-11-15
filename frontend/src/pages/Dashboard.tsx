@@ -154,7 +154,7 @@ function RunResult({ schedule, onView }: { schedule: Schedule; onView: () => voi
               <li>S4 room type <b>{pb.S4_room_type}</b> <span className="muted">({pb.S4_room_type_count})</span></li>
             </ul>
           )}
-          {left.length > 0 && <UnscheduledList items={left} />}
+          {left.length > 0 && <UnscheduledList key={schedule.id} items={left} scheduleId={schedule.id} />}
         </>
       ) : (
         <p>{schedule.message ?? 'Unknown reason.'}</p>

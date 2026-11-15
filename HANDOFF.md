@@ -56,8 +56,14 @@ conflicting classes out, and says specifically why each was left out and what to
   the blocking classes. Codes: `capacity`, `essential_equipment`, `capacity_and_equipment`,
   `no_block`, `availability`, `no_instructor`, `room_contention`, `instructor_contention`,
   `contention`, `same_course_day`, `time_limit`.
-- `problem.py` — plain dataclasses; `solve()` never touches the database. This is the hook for
-  the later what-if rerun: copy the `Problem`, change one thing, solve again.
+- `problem.py` — plain dataclasses; `solve()` never touches the database.
+- `whatif.py` — `find_fixes(problem, previous_result)`: verified fixes. Per left-out class it
+  picks up to 4 single changes from the reason code and blockers (shorten by an hour, widen the
+  instructor's availability to all slots, one more room like a blocking room, a new room big
+  enough / with the essential equipment), re-solves a copy of the `Problem` (3 s limit each)
+  and keeps a change only if the class is placed and the total placed goes up. A class with no
+  working change gets a `kind: "none"` entry. `POST /api/schedules/<id>/suggestions` runs it
+  on current data; nothing is stored. About 20 s on the `--conflict` seed.
 - `service.py` — loads from the DB, solves, saves `Schedule.unscheduled` (JSON) and
   assignments with `class_index` and `duration_hours`. A solver crash becomes a `failed`
   schedule with a message.
@@ -77,6 +83,8 @@ conflicting classes out, and says specifically why each was left out and what to
 ### Website (`frontend/src/`)
 
 - Dashboard and Timetable show a warning panel listing each left-out class with its reason.
+  Its "Find fixes" button lists the verified fixes under each class (`UnscheduledList` in
+  `components/ui.tsx`).
 - Timetable draws a multi-hour class in every hour it covers; later hours faded with "cont.".
 - Courses form has class length and classes per week.
 - Constraints "Preview effect" handles partial results (was a bug: said "no timetable").
@@ -90,11 +98,12 @@ conflicting classes out, and says specifically why each was left out and what to
 
 ### Tests
 
-- Backend: 25 pass. `backend/tests/test_solver.py` (17, no database) and `test_api.py`
-  (8, Postgres database `chronos_test`, created automatically).
-- Browser: 12 pass. `frontend/e2e/scheduling.spec.ts` and `pages.spec.ts`. They start their own
+- Backend: 36 pass. `backend/tests/test_solver.py` (17) and `test_whatif.py` (8), no database;
+  `test_api.py` (11, Postgres database `chronos_test`, created automatically).
+- Browser: 13 pass. `frontend/e2e/scheduling.spec.ts` and `pages.spec.ts`. They start their own
   API (port 5002) and Vite (5174) on database `chronos_e2e`; dev data is untouched.
-- TDD was red-first for the solver only. API tests were written after the code.
+- TDD was red-first for the solver and the what-if fixes. Older API tests were written after
+  the code.
 
 ## How to run
 
@@ -140,9 +149,7 @@ E2E_BROWSER=msedge npm run test:e2e               # PowerShell: $env:E2E_BROWSER
 ## Plan: what comes next (not started; wait for the user)
 
 1. User reviews the website by hand and sends a round of fixes.
-2. Verified what-if suggestions: a "Find fixes" button on a partial schedule, e.g.
-   `POST /schedules/:id/suggestions`. For each left-out class, try single changes (free a
-   room, widen availability, shorten the class), re-solve, and report the ones that work.
+2. ~~Verified what-if suggestions ("Find fixes")~~ — done 2026-11-15, see `whatif.py` above.
 3. AI-written suggestions through OpenRouter, using the stored reasons and verified fixes.
 4. Per-course priority: which classes to drop first when not all fit.
 5. Login (`User`, `/auth/*`, login page) — last.

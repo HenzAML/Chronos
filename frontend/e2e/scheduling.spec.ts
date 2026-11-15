@@ -53,6 +53,34 @@ test('unhappy path: best timetable plus a reason for every class left out', asyn
   await expect(page.locator('.detail')).toContainText('Instructor')
 })
 
+test('Find fixes lists the verified single changes under each left-out class', async ({ page }) => {
+  seed('--conflict')
+  const result = await generate(page)
+  await expect(result.locator('.fixes')).toHaveCount(0)
+
+  await result.getByRole('button', { name: 'Find fixes' }).click()
+  await expect(result.locator('.spinner')).toBeVisible()
+
+  const fixes = (code: string) =>
+    result.locator('.unscheduled > li').filter({ hasText: code }).locator('.fixes > li')
+  await expect(fixes('DEMO901')).toHaveText(
+    'Add a room with at least 200 seats — verified: 87 classes placed.')
+  await expect(fixes('DEMO902')).toContainText('Add a room with at least 20 seats and Lab Benches')
+  await expect(fixes('DEMO903')).toContainText('Shorten DEMO903 from 7 to 6 hours')
+  await expect(fixes('DEMO904')).toHaveText([
+    /Make Dr\. Demo Gaps available on more slots/, /Shorten DEMO904 from 2 to 1 hour/])
+  await expect(fixes('DEMO905')).toContainText('Make Dr. Demo Monday available on more slots')
+  // Every left-out class gets an answer, a fix or "no single change".
+  await expect(result.locator('.unscheduled > li:has(.fixes > li)')).toHaveCount(7)
+  await expect(result.locator('.spinner')).toHaveCount(0)
+
+  // The same panel on the Timetable page.
+  await result.getByRole('button', { name: 'Open timetable' }).click()
+  const warning = page.locator('.alert-warn')
+  await warning.getByRole('button', { name: 'Find fixes' }).click()
+  await expect(warning.locator('.fixes > li').first()).toContainText('verified: 87 classes placed')
+})
+
 test('a course added in the website that fits no room is left out with the reason', async ({ page }) => {
   seed('--tight')
   await page.goto('/courses')

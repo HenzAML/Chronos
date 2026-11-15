@@ -126,6 +126,19 @@ export interface Unscheduled {
   }[]
 }
 
+/** One verified fix for a left-out class: a single change that, re-solved,
+ *  places it. kind "none" means no single change works.
+ *  Mirrors app/solver/whatif.py. */
+export interface Fix {
+  course_id: number
+  course_code: string
+  class_index: number
+  kind: 'shorten' | 'widen_availability' | 'room_like' | 'new_room' | 'none'
+  message: string
+  /** Classes placed after the change. */
+  placed: number
+}
+
 export const REASON_LABELS: Record<string, string> = {
   capacity: 'Room too small',
   essential_equipment: 'Missing equipment',

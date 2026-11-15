@@ -5,8 +5,9 @@ from app.models import Schedule
 from app.api.helpers import (
     ApiError, as_bool, as_int, assignment_json, body, commit, get_or_404, schedule_json,
 )
-from app.solver import generate_schedule
+from app.solver import Placement, SolveResult, Unscheduled, generate_schedule, load_problem
 from app.solver.problem import Toggles, Weights
+from app.solver.whatif import find_fixes
 from app.models import ConstraintConfig
 
 bp = Blueprint("schedules", __name__, url_prefix="/api")
@@ -104,6 +105,23 @@ def get_grid(schedule_id):
         "days": sorted({a.time_slot.day for a in s.assignments}),
         "grid": grid,
     })
+
+
+@bp.post("/schedules/<int:schedule_id>/suggestions")
+def suggestions(schedule_id):
+    """Verified fixes for the classes this schedule left out: single changes
+    that, re-solved against the current data, place the class without dropping
+    another. Computed on request, nothing is stored."""
+    s = get_or_404(Schedule, schedule_id, "Schedule")
+    cfg = ConstraintConfig.get()
+    previous = SolveResult(
+        status=s.status,
+        placements=[Placement(a.course_id, a.class_index, a.room_id, a.time_slot_id,
+                              a.duration_hours, penalty=0) for a in s.assignments],
+        unscheduled=[Unscheduled(**u) for u in s.unscheduled or []],
+    )
+    return jsonify(find_fixes(load_problem(db.session), previous,
+                              Weights.from_config(cfg), Toggles.from_config(cfg)))
 
 
 @bp.delete("/schedules/<int:schedule_id>")

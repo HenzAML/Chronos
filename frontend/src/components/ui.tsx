@@ -1,7 +1,8 @@
+import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { ApiError } from '../api/client'
+import { ApiError, api } from '../api/client'
 import { REASON_LABELS } from '../types'
-import type { Unscheduled } from '../types'
+import type { Fix, Unscheduled } from '../types'
 
 export function Spinner({ label = 'Loading…' }: { label?: string }) {
   return <div className="state"><span className="spinner" />{label}</div>
@@ -77,21 +78,54 @@ export function StatusBadge({ status }: { status: string }) {
   return <Badge kind={kind}>{status}</Badge>
 }
 
-/** Classes the solver left out, each with its reason. */
-export function UnscheduledList({ items }: { items: Unscheduled[] }) {
+/** Classes the solver left out, each with its reason. "Find fixes" asks the
+ *  server to try single changes and lists the ones that work under each class. */
+export function UnscheduledList({ items, scheduleId }: { items: Unscheduled[]; scheduleId: number }) {
+  const [fixes, setFixes] = useState<Fix[] | null>(null)
+  const [error, setError] = useState<unknown>(null)
+  const [finding, setFinding] = useState(false)
+
+  async function findFixes() {
+    setFinding(true)
+    setError(null)
+    try {
+      setFixes(await api.schedules.suggestions(scheduleId))
+    } catch (e) {
+      setError(e)
+    } finally {
+      setFinding(false)
+    }
+  }
+
   return (
-    <ul className="unscheduled">
-      {items.map((u) => (
-        <li key={`${u.course_id}-${u.class_index}`}>
-          <div className="unscheduled-head">
-            <strong>{u.course_code}</strong>
-            <span className="muted">{u.course_name}</span>
-            <Badge kind="warn">{REASON_LABELS[u.code] ?? u.code}</Badge>
-          </div>
-          <p>{u.message}</p>
-        </li>
-      ))}
-    </ul>
+    <>
+      <div className="fixes-bar">
+        <button className="btn btn-sm" onClick={findFixes} disabled={finding}>Find fixes</button>
+        {finding && <Spinner label="Trying one change at a time…" />}
+      </div>
+      {error && <ErrorBox error={error} />}
+      <ul className="unscheduled">
+        {items.map((u) => (
+          <li key={`${u.course_id}-${u.class_index}`}>
+            <div className="unscheduled-head">
+              <strong>{u.course_code}</strong>
+              <span className="muted">{u.course_name}</span>
+              <Badge kind="warn">{REASON_LABELS[u.code] ?? u.code}</Badge>
+            </div>
+            <p>{u.message}</p>
+            {fixes && (
+              <ul className="fixes">
+                {fixes
+                  .filter((f) => f.course_id === u.course_id && f.class_index === u.class_index)
+                  .map((f) => f.kind === 'none'
+                    ? <li key={f.kind} className="muted">{f.message}.</li>
+                    : <li key={f.message}><b>{f.message}</b> — verified: {f.placed} classes placed.</li>)}
+              </ul>
+            )}
+          </li>
+        ))}
+      </ul>
+    </>
   )
 }
 

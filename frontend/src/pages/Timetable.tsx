@@ -78,7 +78,7 @@ export default function Timetable() {
             {grid.unscheduled.length} of {grid.schedule.class_count} classes could not be
             scheduled. This is the best timetable found without them.
           </strong>
-          <UnscheduledList items={grid.unscheduled} />
+          <UnscheduledList key={grid.schedule.id} items={grid.unscheduled} scheduleId={grid.schedule.id} />
         </div>
       )}
 

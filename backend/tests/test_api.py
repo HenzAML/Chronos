@@ -109,6 +109,41 @@ def test_unknown_schedule_is_a_json_404(client):
     assert "not found" in res.get_json()["error"]["message"].lower()
 
 
+def test_suggestions_lists_verified_fixes_for_a_partial_schedule(client):
+    [slot] = [post(client, "/timeslots", {"day": 0, "hour": 9})]
+    post(client, "/rooms", {"code": "LAB-1", "capacity": 50})
+    for n in (1, 2):
+        teacher = post(client, "/instructors", {
+            "name": f"Dr. {n}", "availability_slot_ids": [slot["id"]]})
+        add_course(client, f"CS10{n}", teacher)
+    s = post(client, "/generate", {}, expect=200)
+    [u] = s["unscheduled"]
+
+    fixes = post(client, f"/schedules/{s['id']}/suggestions", {}, expect=200)
+
+    assert fixes == [{
+        "course_id": u["course_id"], "course_code": u["course_code"], "class_index": 1,
+        "kind": "room_like", "message": "Add a room like LAB-1 (50 seats)", "placed": 2,
+    }]
+    # Computed on request: the schedule itself is unchanged.
+    assert client.get(f"/api/schedules/{s['id']}").get_json()["unscheduled"] == [u]
+
+
+def test_suggestions_are_empty_when_nothing_was_left_out(client):
+    slots, teacher = setup_campus(client)
+    add_course(client, "CS101", teacher)
+    s = post(client, "/generate", {}, expect=200)
+
+    assert post(client, f"/schedules/{s['id']}/suggestions", {}, expect=200) == []
+
+
+def test_suggestions_for_an_unknown_schedule_is_a_json_404(client):
+    res = client.post("/api/schedules/999/suggestions")
+
+    assert res.status_code == 404
+    assert "not found" in res.get_json()["error"]["message"].lower()
+
+
 def test_bad_generate_input_is_rejected_with_details(client):
     res = client.post("/api/generate", json={"time_limit_seconds": "soon"})
 
