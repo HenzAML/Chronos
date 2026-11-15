@@ -14,11 +14,8 @@ export default function Layout() {
     <div className="app">
       <aside className="sidebar">
         <div className="brand">
-          <span className="brand-mark">◷</span>
-          <div>
-            <strong>Chronos</strong>
-            <small>Automated Timetabling</small>
-          </div>
+          <img src="/chronos-logo.svg" alt="Chronos" />
+          <small>An automated timetabling solution</small>
         </div>
         <nav>
           {NAV.map((n) => (
@@ -29,7 +26,11 @@ export default function Layout() {
           ))}
         </nav>
         <footer className="sidebar-foot">
-          <small>KMUTT SIT · Capstone</small>
+          <img src="/chronos-mascot.jpg" alt="" />
+          <div>
+            <strong>CS D-Day 2026</strong>
+            <small>KMUTT SIT · CSC499 Capstone</small>
+          </div>
         </footer>
       </aside>
       <main className="content"><Outlet /></main>

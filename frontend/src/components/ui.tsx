@@ -23,7 +23,12 @@ export function ErrorBox({ error, onRetry }: { error: unknown; onRetry?: () => v
 }
 
 export function Empty({ children }: { children: ReactNode }) {
-  return <div className="state state-empty">{children}</div>
+  return (
+    <div className="state state-empty">
+      <img src="/chronos-mascot.jpg" alt="" />
+      <div>{children}</div>
+    </div>
+  )
 }
 
 export function Modal(
