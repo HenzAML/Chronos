@@ -1,7 +1,7 @@
 """API tests run against a real Postgres database (the models use ARRAY).
 
-Uses TEST_DATABASE_URL, or DATABASE_URL with "_test" added to the database
-name. The database is created on first use and emptied before every test.
+Uses TEST_DATABASE_URL, or chronos_test on the local Docker Postgres.
+The database is created on first use and emptied before every test.
 """
 
 import os
@@ -18,9 +18,8 @@ def _test_url():
     explicit = os.environ.get("TEST_DATABASE_URL")
     if explicit:
         return make_url(explicit)
-    base = make_url(os.environ.get(
-        "DATABASE_URL", "postgresql://chronos:chronos@localhost:5432/chronos"))
-    return base.set(database=f"{base.database}_test")
+    # Never derived from DATABASE_URL: that may be a hosted database (Supabase).
+    return make_url("postgresql://chronos:chronos@localhost:5432/chronos_test")
 
 
 @pytest.fixture(scope="session")
